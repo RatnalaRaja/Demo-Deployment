@@ -1,0 +1,43 @@
+piVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: photo-gallery-ingress
+  annotations:
+    # Use the AWS ALB Ingress Controller
+    kubernetes.io/ingress.class: alb
+    # Create an internet-facing ALB
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    # Enable HTTP to HTTPS redirection (if you add TLS later)
+    # alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS":443}]'
+    # alb.ingress.kubernetes.io/actions.ssl-redirect: '{"Type": "redirect", "RedirectConfig": { "Protocol": "HTTPS", "Port": "443", "StatusCode": "HTTP_301"}}'
+    # Health check path for the ALB
+    alb.ingress.kubernetes.io/healthcheck-path: /health # Backend has a /health endpoint
+    # Target type for the ALB (instance or ip)
+    alb.ingress.kubernetes.io/target-type: ip
+    # Stickiness (optional)
+    # alb.ingress.kubernetes.io/backend-protocol: HTTP
+    # alb.ingress.kubernetes.io/target-group-attributes: stickiness.enabled=true,stickiness.lb_cookie.duration_seconds=600
+    # SSL Certificate ARN (if using HTTPS)
+    # alb.ingress.kubernetes.io/certificate-arn: arn:aws:acm:<REGION>:<ACCOUNT_ID>:certificate/<CERT_ID>
+    # SSL Policy (optional)
+    # alb.ingress.kubernetes.io/ssl-policy: ELBSecurityPolicy-TLS13-Ext-2021-06
+  labels:
+    app: photo-gallery
+spec:
+  rules:
+  - http:
+      paths:
+      - path: /api/* # All /api requests go to the backend
+        pathType: Prefix
+        backend:
+          service:
+            name: backend-service
+            port:
+              number: 3001
+      - path: /* # All other requests go to the frontend
+        pathType: Prefix
+        backend:
+          service:
+            name: frontend-service
+            port:
+              number: 80

@@ -1,0 +1,82 @@
+# .github/workflows/terraform.yaml
+# This workflow applies Terraform changes to provision AWS infrastructure.
+name: 'Terraform Apply Infrastructure'
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'terraform/**' # Trigger when changes occur in the terraform directory
+  workflow_dispatch: # Allows manual triggering from GitHub UI
+
+env:
+  AWS_REGION: ${{ secrets.AWS_REGION }}
+  S3_BUCKET_NAME: "photo-gallery-images-unique-name-12345" # Must match your terraform/variables.tf default or override
+
+jobs:
+  terraform:
+    name: 'Terraform Apply'
+    runs-on: ubuntu-latest
+    environment: production # Or a suitable environment name
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.x.x # Use a compatible Terraform version
+
+      - name: Terraform Init
+        id: init
+        run: terraform -chdir=./terraform init -backend-config="bucket=${{ env.S3_BUCKET_NAME }}" -backend-config="key=photo-gallery/terraform.tfstate" -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform Validate
+        id: validate
+        run: terraform -chdir=./terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform -chdir=./terraform plan -no-color -out=tfplan
+        continue-on-error: true
+
+      - name: Terraform Apply
+        id: apply
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push' # Only apply on push to main
+        run: terraform -chdir=./terraform apply -auto-approve tfplan
+
+      - name: Extract EKS Cluster Name
+        id: get_cluster_name
+        run: echo "EKS_CLUSTER_NAME=$(terraform -chdir=./terraform output -raw eks_cluster_name)" >> $GITHUB_ENV
+
+      - name: Extract S3 Bucket Name
+        id: get_s3_bucket_name
+        run: echo "S3_BUCKET_NAME_OUTPUT=$(terraform -chdir=./terraform output -raw s3_bucket_name)" >> $GITHUB_ENV
+
+      - name: Extract S3 IRSA Role ARN
+        id: get_s3_irsa_role_arn
+        run: echo "S3_IRSA_ROLE_ARN=$(terraform -chdir=./terraform output -raw s3_irsa_role_arn)" >> $GITHUB_ENV
+
+      - name: Update K8s Manifests with dynamic values
+        run: |
+          # Replace placeholders in K8s manifests
+          sed -i "s|<YOUR_ECR_REPO_URL>|${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com|g" k8s/*.yaml
+          sed -i "s|<YOUR_S3_BUCKET_NAME>|${{ env.S3_BUCKET_NAME_OUTPUT }}|g" k8s/*.yaml
+          sed -i "s|<YOUR_AWS_REGION>|${{ env.AWS_REGION }}|g" k8s/*.yaml
+          sed -i "s|<YOUR_AWS_ACCOUNT_ID>|${{ secrets.AWS_ACCOUNT_ID }}|g" k8s/*.yaml
+
+          # Commit updated manifests back to the repo (optional, but useful for tracking)
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add k8s/*.yaml
+          git commit -m "chore: Update K8s manifests with ECR and S3 details [skip ci]" || echo "No changes to commit"
+          git push || echo "No changes to push"
