@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: backend
-          image: <your-backend-ecr-url>
+          image: 224425920035.dkr.ecr.us-east-1.amazonaws.com/photo-gallery-backend:latest
           ports:
             - containerPort: 3001
