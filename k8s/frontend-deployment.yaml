@@ -1,31 +1,19 @@
-# k8s/frontend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: frontend-deployment
-  labels:
-    app: photo-gallery-frontend
+  name: frontend
 spec:
-  replicas: 1 # You can increase this for high availability
+  replicas: 1
   selector:
     matchLabels:
-      app: photo-gallery-frontend
+      app: frontend
   template:
     metadata:
       labels:
-        app: photo-gallery-frontend
+        app: frontend
     spec:
       containers:
-      - name: frontend
-        image: <YOUR_ECR_REPO_URL>/photo-gallery-frontend:latest # Placeholder: Update with your ECR image
-        ports:
-        - containerPort: 80 # Nginx serves on port 80
-        resources:
-          requests:
-            memory: "64Mi"
-            cpu: "100m"
-          limits:
-            memory: "128Mi"
-            cpu: "200m"
-
-        
+        - name: frontend
+          image: <your-frontend-ecr-url>
+          ports:
+            - containerPort: 3000

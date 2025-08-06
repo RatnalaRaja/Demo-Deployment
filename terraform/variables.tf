@@ -57,5 +57,5 @@ variable "min_size" {
 variable "s3_bucket_name" {
   description = "Name for the S3 bucket to store images."
   type        = string
-  default     = "photo-gallery-images-unique-name-12345" # IMPORTANT: Must be globally unique!
+  default     = "photo-gallery-images-unique-name-12345678" # IMPORTANT: Must be globally unique!
 }

@@ -1,15 +1,12 @@
-# k8s/frontend-service.yaml
 apiVersion: v1
 kind: Service
 metadata:
   name: frontend-service
-  labels:
-    app: photo-gallery-frontend
 spec:
+  type: NodePort
   selector:
-    app: photo-gallery-frontend
+    app: frontend
   ports:
-    - protocol: TCP
-      port: 80
-      targetPort: 80
-  type: ClusterIP # Internal service
+    - port: 80
+      targetPort: 3000
+      nodePort: 30080

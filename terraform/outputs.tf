@@ -1,4 +1,3 @@
-
 output "eks_cluster_name" {
   description = "The name of the EKS cluster."
   value       = aws_eks_cluster.photo_gallery_cluster.name
@@ -22,9 +21,4 @@ output "s3_bucket_name" {
 output "s3_irsa_role_arn" {
   description = "The ARN of the IAM role for S3 access via IRSA."
   value       = aws_iam_role.s3_irsa_role.arn
-}
-
-output "alb_ingress_url" {
-  description = "The URL of the AWS ALB created by the Ingress controller (will appear after Ingress is deployed)."
-  value       = "Check Kubernetes Ingress status for the ALB DNS name."
 }

@@ -14,6 +14,9 @@ import {
 } from 'react-icons/fi';
 import './App.css';
 
+// ✅ Get base URL from .env
+const BASE_URL = process.env.REACT_APP_BACKEND_BASE_URL;
+
 function UploadPage() {
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState('');
@@ -65,7 +68,7 @@ function UploadPage() {
     setMessage({ text: 'Encrypting and uploading to secure vault...', type: 'info' });
 
     try {
-      const response = await axios.get('http://localhost:3001/api/generate-upload-url', {
+      const response = await axios.get(`${BASE_URL}/api/generate-upload-url`, {
         params: {
           fileName: selectedFile.name,
           fileType: selectedFile.type,
@@ -161,7 +164,7 @@ function GalleryPage() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/images');
+        const response = await axios.get(`${BASE_URL}/api/images`);
         setImages(response.data);
       } catch (error) {
         console.error("Failed to load images", error);

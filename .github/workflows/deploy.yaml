@@ -1,112 +1,59 @@
-# .github/workflows/deploy.yaml
-# This workflow builds Docker images, pushes them to ECR, and deploys to EKS.
-name: 'Deploy Application to EKS'
+name: Deploy App to EKS
 
 on:
   push:
-    branches:
-      - main
-    paths:
-      - 'frontend/**'
-      - 'backend/**'
-      - 'k8s/**'
-  workflow_dispatch: # Allows manual triggering from GitHub UI
-
-env:
-  AWS_REGION: ${{ secrets.AWS_REGION }}
-  ECR_REPOSITORY_FRONTEND: photo-gallery-frontend
-  ECR_REPOSITORY_BACKEND: photo-gallery-backend
-  EKS_CLUSTER_NAME: photo-gallery-eks-cluster # Must match your terraform/variables.tf default
+    branches: [main]
+    paths: [k8s/**, Task-Project/**]
 
 jobs:
   deploy:
-    name: 'Build, Push, and Deploy'
+    name: Deploy to EKS
     runs-on: ubuntu-latest
-    environment: production # Or a suitable environment name
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
+          aws-region: us-east-1
 
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Build and push frontend Docker image to ECR
-        id: build-image-frontend
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:latest ./frontend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_FRONTEND:latest
-          echo "::set-output name=image::${ECR_REGISTRY}/${ECR_REPOSITORY_FRONTEND}:${IMAGE_TAG}"
-
-      - name: Build and push backend Docker image to ECR
-        id: build-image-backend
-        env:
-          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
-        run: |
-          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest ./backend
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:$IMAGE_TAG
-          docker push $ECR_REGISTRY/$ECR_REPOSITORY_BACKEND:latest
-          echo "::set-output name=image::${ECR_REGISTRY}/${ECR_REPOSITORY_BACKEND}:${IMAGE_TAG}"
-
-      - name: Update K8s Manifests with ECR image tags
-        run: |
-          # Replace the image placeholder in the K8s deployment files
-          # This assumes the terraform workflow has already updated the ECR_REPO_URL
-          sed -i "s|photo-gallery-frontend:latest|photo-gallery-frontend:${{ github.sha }}|g" k8s/frontend-deployment.yaml
-          sed -i "s|photo-gallery-backend:latest|photo-gallery-backend:${{ github.sha }}|g" k8s/backend-deployment.yaml
-
-      - name: Install kubectl
+      - name: Setup kubectl
         uses: azure/setup-kubectl@v3
-        with:
-          version: 'v1.28.0' # Use a kubectl version compatible with your EKS cluster
 
-      - name: Configure kubeconfig for EKS
-        run: |
-          aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
+      - name: Update kubeconfig
+        run: aws eks update-kubeconfig --name photo-gallery-eks-cluster --region us-east-1
 
-      - name: Apply Kubernetes manifests
+      - name: Get EKS Node Public IP
+        id: nodeip
         run: |
-          kubectl apply -f k8s/s3-irsa.yaml
+          NODE_IP=$(aws ec2 describe-instances \
+            --filters "Name=tag:eks:nodegroup-name,Values=photo-gallery-eks-cluster-node-group" \
+                      "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[].PublicIpAddress" \
+            --output text)
+          echo "NODE_IP=$NODE_IP" >> $GITHUB_ENV
+
+      - name: Inject public IP into React .env
+        run: |
+          echo "REACT_APP_BACKEND_BASE_URL=http://${NODE_IP}:30081" > Task-Project/client/.env
+          cat Task-Project/client/.env
+
+      - name: Build React App
+        run: |
+          cd Task-Project/client
+          npm install
+          npm run build
+
+      - name: Deploy Backend
+        run: |
           kubectl apply -f k8s/backend-deployment.yaml
           kubectl apply -f k8s/backend-service.yaml
+
+      - name: Deploy Frontend
+        run: |
           kubectl apply -f k8s/frontend-deployment.yaml
           kubectl apply -f k8s/frontend-service.yaml
-          kubectl apply -f k8s/ingress.yaml
-
-      - name: Verify Deployment
-        run: |
-          kubectl get pods -l app=photo-gallery-frontend
-          kubectl get pods -l app=photo-gallery-backend
-          kubectl get svc
-          kubectl get ingress photo-gallery-ingress
-
-      - name: Get ALB Ingress URL
-        run: |
-          echo "Waiting for ALB Ingress to become available..."
-          # Loop until the ALB Ingress URL is available
-          for i in $(seq 1 60); do
-            INGRESS_HOST=$(kubectl get ingress photo-gallery-ingress -o jsonpath='{.status.loadBalancer.ingress[0].hostname}')
-            if [ -n "$INGRESS_HOST" ]; then
-              echo "ALB Ingress URL: http://$INGRESS_HOST"
-              break
-            fi
-            echo "Attempt $i: Ingress host not yet available, waiting 10 seconds..."
-            sleep 10
-          done
-          if [ -z "$INGRESS_HOST" ]; then
-            echo "ALB Ingress URL not found after multiple attempts."
-            exit 1
-          fi

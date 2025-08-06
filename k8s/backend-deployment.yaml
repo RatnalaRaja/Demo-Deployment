@@ -1,35 +1,19 @@
-# k8s/backend-deployment.yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: backend-deployment
-  labels:
-    app: photo-gallery-backend
+  name: backend
 spec:
-  replicas: 1 # You can increase this for high availability
+  replicas: 1
   selector:
     matchLabels:
-      app: photo-gallery-backend
+      app: backend
   template:
     metadata:
       labels:
-        app: photo-gallery-backend
+        app: backend
     spec:
-      serviceAccountName: s3-access-sa # Link to the Service Account for S3 access
       containers:
-      - name: backend
-        image: <YOUR_ECR_REPO_URL>/photo-gallery-backend:latest # Placeholder: Update with your ECR image
-        ports:
-        - containerPort: 3001
-        env:
-        - name: S3_BUCKET_NAME
-          value: <YOUR_S3_BUCKET_NAME> # Placeholder: Update with your S3 bucket name
-        - name: AWS_REGION
-          value: <YOUR_AWS_REGION> # Placeholder: e.g., us-east-1
-        resources:
-          requests:
-            memory: "128Mi"
-            cpu: "250m"
-          limits:
-            memory: "256Mi"
-            cpu: "500m"
+        - name: backend
+          image: <your-backend-ecr-url>
+          ports:
+            - containerPort: 3001
