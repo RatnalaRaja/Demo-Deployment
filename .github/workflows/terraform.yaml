@@ -5,6 +5,8 @@ on:
     branches: [main]
     paths: [terraform/**]
 
+  workflow_dispatch:  # ✅ Enables manual trigger from GitHub UI
+
 jobs:
   terraform:
     name: Terraform
