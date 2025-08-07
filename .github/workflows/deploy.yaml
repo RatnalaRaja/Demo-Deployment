@@ -46,7 +46,7 @@ jobs:
           cd Task-Project/client
 
           # Create .env file with backend URL from GitHub Secrets
-          echo "REACT_APP_BACKEND_URL=${{ secrets.REACT_APP_BACKEND_URL }}" > .env
+          echo "REACT_APP_BACKEND_BASE_URL=${{ secrets.REACT_APP_BACKEND_BASE_URL }}" > .env
 
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
           docker build -t $IMAGE_URI .
