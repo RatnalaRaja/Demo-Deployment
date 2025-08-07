@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
     paths: [k8s/**, Task-Project/**]
+  
+  # This event allows the workflow to be triggered manually from the GitHub UI
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -51,7 +54,6 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Update kubeconfig
-        # Use the EKS_CLUSTER_NAME variable for dynamic cluster name
         run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
       - name: Deploy Backend
