@@ -9,6 +9,16 @@ resource "aws_s3_bucket" "photo_gallery_bucket" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "photo_gallery_bucket_public_access_block" {
+  bucket = aws_s3_bucket.photo_gallery_bucket.id
+
+  # Setting all public access blocks to 'false' to allow the public read policy to be applied.
+  block_public_acls       = false
+  block_public_policy     = false
+  ignore_public_acls      = false
+  restrict_public_buckets = false
+}
+
 # S3 Bucket Policy to allow read/write from IAM Role for Service Account
 # This policy will be attached to the S3 bucket.
 resource "aws_s3_bucket_policy" "photo_gallery_bucket_policy" {
