@@ -15,7 +15,7 @@ import {
 import './App.css';
 
 // ✅ Get base URL from .env
-const BASE_URL = process.env.REACT_APP_BACKEND_BASE_URL;
+
 
 function UploadPage() {
   const [selectedFile, setSelectedFile] = useState(null);
