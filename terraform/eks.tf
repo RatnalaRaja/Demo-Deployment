@@ -1,4 +1,3 @@
-
 # terraform/eks.tf
 # Configures the EKS cluster and its node groups.
 
@@ -29,7 +28,7 @@ resource "aws_eks_node_group" "photo_gallery_node_group" {
   cluster_name    = aws_eks_cluster.photo_gallery_cluster.name
   node_group_name = "${var.cluster_name}-node-group"
   node_role_arn   = aws_iam_role.eks_node_role.arn
-  subnet_ids      = aws_subnet.photo_gallery_private_subnets[*].id # Deploy nodes in private subnets
+  subnet_ids      = aws_subnet.photo_gallery_public_subnets[*].id # Deploy nodes in public subnets
   instance_types  = [var.instance_type]
 
   scaling_config {
@@ -58,4 +57,3 @@ resource "aws_eks_node_group" "photo_gallery_node_group" {
 data "aws_eks_cluster_auth" "photo_gallery_cluster_auth" {
   name = aws_eks_cluster.photo_gallery_cluster.name
 }
-
