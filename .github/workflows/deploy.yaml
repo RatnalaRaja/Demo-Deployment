@@ -12,6 +12,8 @@ jobs:
 
     env:
       AWS_REGION: us-east-1
+      # Correct EKS Cluster Name from your Terraform deployment
+      EKS_CLUSTER_NAME: photo-gallery-eks-cluster-public
       ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
       FRONTEND_IMAGE: photo-gallery-frontend
       BACKEND_IMAGE: photo-gallery-backend
@@ -49,7 +51,8 @@ jobs:
         uses: azure/setup-kubectl@v3
 
       - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name photo-gallery-eks-cluster --region ${{ env.AWS_REGION }}
+        # Use the EKS_CLUSTER_NAME variable for dynamic cluster name
+        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
 
       - name: Deploy Backend
         run: |
