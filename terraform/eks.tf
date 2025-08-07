@@ -15,9 +15,6 @@ resource "aws_eks_cluster" "photo_gallery_cluster" {
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
   }
 
-  # ... rest of the resource block
-}
-
   tags = {
     Name = var.cluster_name
   }
