@@ -9,11 +9,14 @@ resource "aws_eks_cluster" "photo_gallery_cluster" {
   version  = "1.28" # Specify your desired Kubernetes version
 
   vpc_config {
-    subnet_ids         = concat(aws_subnet.photo_gallery_public_subnets[*].id, aws_subnet.photo_gallery_private_subnets[*].id)
-    endpoint_private_access = false # Set to true for private EKS endpoint
-    endpoint_public_access  = true  # Set to false if endpoint_private_access is true
+    subnet_ids = aws_subnet.photo_gallery_public_subnets[*].id
+    endpoint_private_access = false
+    endpoint_public_access  = true
     security_group_ids = [aws_security_group.eks_cluster_sg.id]
   }
+
+  # ... rest of the resource block
+}
 
   tags = {
     Name = var.cluster_name
