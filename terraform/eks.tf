@@ -33,10 +33,7 @@ resource "aws_eks_node_group" "photo_gallery_node_group" {
   subnet_ids      = aws_subnet.photo_gallery_public_subnets[*].id # Deploy nodes in public subnets
   instance_types  = [var.instance_type]
 
-  # Add the key pair to the node group for SSH access
-  remote_access {
-    ec2_ssh_key = aws_key_pair.photo_gallery_key_pair.key_name
-  }
+
 
   scaling_config {
     desired_size = var.desired_size
