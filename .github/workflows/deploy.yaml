@@ -41,6 +41,12 @@ jobs:
           docker build -t $IMAGE_URI .
           docker push $IMAGE_URI
 
+
+
+      - name: Install dependencies
+        run: |
+          cd Task-Project/client
+          npm install
       - name: Build and Push Frontend Docker Image
         run: |
           cd Task-Project/client
