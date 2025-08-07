@@ -1,4 +1,3 @@
-
 resource "aws_vpc" "photo_gallery_vpc" {
   cidr_block           = var.vpc_cidr_block
   enable_dns_hostnames = true
@@ -101,4 +100,3 @@ resource "aws_route_table_association" "photo_gallery_private_rt_assoc" {
   subnet_id      = aws_subnet.photo_gallery_private_subnets[count.index].id
   route_table_id = aws_route_table.photo_gallery_private_rt[count.index].id
 }
-
