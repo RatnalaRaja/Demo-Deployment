@@ -1,13 +1,27 @@
-FROM node:18-alpine
-
-ARG REACT_APP_BACKEND_BASE_URL
-ENV REACT_APP_BACKEND_BASE_URL=$REACT_APP_BACKEND_BASE_URL
+# === Stage 1: Build React App ===
+FROM node:18-alpine AS build
 
 WORKDIR /app
+
+# Install dependencies
+COPY package*.json ./
+RUN npm install
+
+# Copy all files, including .env
 COPY . .
 
-RUN npm install
-RUN REACT_APP_BACKEND_BASE_URL=$REACT_APP_BACKEND_BASE_URL npm run build
+# Build the React app (will read .env here)
+RUN npm run build
 
-EXPOSE 3000
-CMD ["npm", "start"]
+# === Stage 2: Serve with Nginx ===
+FROM nginx:stable-alpine
+
+# Remove default index.html
+RUN rm -rf /usr/share/nginx/html/*
+
+# Copy build output to Nginx
+COPY --from=build /app/build /usr/share/nginx/html
+
+# Expose port and run
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
