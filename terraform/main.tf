@@ -2,7 +2,6 @@
 # This file ties together the various modules and resources.
 # It sets up the AWS provider and configures the Kubernetes and Helm providers
 # to interact with the EKS cluster created by other Terraform files.
-
 provider "aws" {
   region = var.aws_region
 }
