@@ -4,55 +4,6 @@ on:
   push:
     branches: [main]
     paths: [k8s/**, Task-Project/**]
-  
-  # This event allows the workflow to be triggered manually from the GitHub UI
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    name: Deploy to EKS
-    runs-on: ubuntu-latest
-
-    env:
-      AWS_REGION: us-east-1
-      # Correct EKS Cluster Name from your Terraform deployment
-      EKS_CLUSTER_NAME: photo-gallery-eks-cluster-public
-      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
-      FRONTEND_IMAGE: photo-gallery-frontend
-      BACKEND_IMAGE: photo-gallery-backend
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Login to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v1
-
-      - name: Build and Push Backend Docker Image
-        run: |
-          cd Task-Project/server
-          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
-      - name: Build and Push Frontend Docker Image
-        run: |
-          cd Task-Project/client
-          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
-          docker build -t $IMAGE_URI .name: Deploy App to EKS
-
-on:
-  push:
-    branches: [main]
-    paths: [k8s/**, Task-Project/**]
 
   workflow_dispatch:
 
@@ -99,24 +50,6 @@ jobs:
 
           IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.FRONTEND_IMAGE }}:latest
           docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
-      - name: Setup kubectl
-        uses: azure/setup-kubectl@v3
-
-      - name: Update kubeconfig
-        run: aws eks update-kubeconfig --name ${{ env.EKS_CLUSTER_NAME }} --region ${{ env.AWS_REGION }}
-
-      - name: Deploy Backend
-        run: |
-          kubectl apply -f k8s/backend-deployment.yaml
-          kubectl apply -f k8s/backend-service.yaml
-
-      - name: Deploy Frontend
-        run: |
-          kubectl apply -f k8s/frontend-deployment.yaml
-          kubectl apply -f k8s/frontend-service.yaml
-
           docker push $IMAGE_URI
 
       - name: Setup kubectl
