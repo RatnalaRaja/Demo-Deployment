@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: 224425920035.dkr.ecr.us-east-1.amazonaws.com/photo-gallery-frontend:latest
+          image: 224425920035.dkr.ecr.us-east-1.amazonaws.com/photo-gallery-frontend:local
           ports:
-            - containerPort: 80
+            - containerPort: 3000
