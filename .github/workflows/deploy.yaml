@@ -34,13 +34,7 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v1
 
-      - name: Build and Push Backend Docker Image
-        run: |
-          cd Task-Project/server
-          IMAGE_URI=${{ env.ECR_REGISTRY }}/${{ env.BACKEND_IMAGE }}:latest
-          docker build -t $IMAGE_URI .
-          docker push $IMAGE_URI
-
+      
 
 
       - name: Install dependencies
