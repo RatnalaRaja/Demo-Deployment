@@ -20,7 +20,7 @@ const BUCKET_NAME = 'photo-gallery-images-unique-name-123456789-new';
 app.use(cors());
 app.use(express.json());
 
-app.use(express.static(path.join(__dirname, '..', 'client', 'build')));
+
 
 // ✅ Presigned PUT URL for upload
 app.get('/api/generate-upload-url', async (req, res) => {
