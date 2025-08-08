@@ -13,8 +13,8 @@ const path = require('path');
 const app = express();
 const port = process.env.PORT || 3001;
 
-const s3Client = new S3Client({ region: process.env.AWS_REGION });
-const BUCKET_NAME = process.env.S3_BUCKET_NAME;
+const s3Client = new S3Client({ region: us-east-1 });
+const BUCKET_NAME = photo-gallery-images-unique-name-123456789-new;
 
 app.use(cors());
 app.use(express.json());
