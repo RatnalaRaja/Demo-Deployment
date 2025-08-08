@@ -9,6 +9,7 @@ const {
 const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 const cors = require('cors');
 const path = require('path');
+const { PassThrough } = require('stream'); // ✅ Required for stream piping
 
 const app = express();
 const port = process.env.PORT || 3001;
@@ -16,10 +17,33 @@ const port = process.env.PORT || 3001;
 const s3Client = new S3Client({ region: 'us-east-1' });
 const BUCKET_NAME = 'photo-gallery-images-unique-name-123456789-new';
 
-
 app.use(cors());
 app.use(express.json());
 
+
+// ✅✅ INSERT THIS BLOCK RIGHT HERE
+app.get('/api/proxy-image/:key', async (req, res) => {
+  const key = `uploads/${req.params.key}`;
+
+  const command = new GetObjectCommand({
+    Bucket: BUCKET_NAME,
+    Key: key,
+  });
+
+  try {
+    const s3Response = await s3Client.send(command);
+
+    res.setHeader('Content-Type', s3Response.ContentType || 'application/octet-stream');
+    res.setHeader('Content-Length', s3Response.ContentLength);
+
+    const stream = s3Response.Body;
+    stream.pipe(res);
+  } catch (err) {
+    console.error('Error streaming image from S3:', err);
+    res.status(404).send('Image not found.');
+  }
+});
+// ✅✅ END INSERT BLOCK
 
 
 // ✅ Presigned PUT URL for upload
@@ -71,12 +95,11 @@ app.get('/api/images', async (req, res) => {
     const { Contents = [] } = await s3Client.send(command);
     const imageKeys = Contents.map(item => item.Key);
 
-    const imageUrls = await Promise.all(
-      imageKeys.map(async (key) => {
-        const getCommand = new GetObjectCommand({ Bucket: BUCKET_NAME, Key: key });
-        return getSignedUrl(s3Client, getCommand, { expiresIn: 3600 }); // 1 hour
-      })
-    );
+    // Return proxy URLs instead of presigned S3 URLs
+    const imageUrls = imageKeys.map(key => {
+      const shortKey = key.replace('uploads/', '');
+      return `${req.protocol}://${req.get('host')}/api/proxy-image/${shortKey}`;
+    });
 
     res.json(imageUrls.reverse());
   } catch (error) {
@@ -84,8 +107,6 @@ app.get('/api/images', async (req, res) => {
     res.status(500).send('Could not list images.');
   }
 });
-
-// 🔁 Serve React frontend for unmatched routes
 
 
 app.listen(port, () => {
