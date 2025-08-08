@@ -68,7 +68,7 @@ function UploadPage() {
     setMessage({ text: 'Encrypting and uploading to secure vault...', type: 'info' });
 
     try {
-      const response = await axios.get("http://54.210.246.200:30080/api/generate-upload-url", {
+      const response = await axios.get("http://54.210.246.200:30081/api/generate-upload-url", {
         params: {
           fileName: selectedFile.name,
           fileType: selectedFile.type,
@@ -164,7 +164,7 @@ function GalleryPage() {
   useEffect(() => {
     const fetchImages = async () => {
       try {
-        const response = await axios.get("http://54.210.246.200:30080/api/images");
+        const response = await axios.get("http://54.210.246.200:30081/api/images");
         setImages(response.data);
       } catch (error) {
         console.error("Failed to load images", error);
