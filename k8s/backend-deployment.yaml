@@ -14,6 +14,6 @@ spec:
     spec:
       containers:
         - name: backend
-          image: 224425920035.dkr.ecr.us-east-1.amazonaws.com/photo-gallery-backend:latest
+          image: 224425920035.dkr.ecr.us-east-1.amazonaws.com/photo-gallery-backend@sha256:30241db755476a1aaef1d91cbce6a2f23b2dc8f0f5e3bb25f18484195b5c8e42
           ports:
             - containerPort: 3001
